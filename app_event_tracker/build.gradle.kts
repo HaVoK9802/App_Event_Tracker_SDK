@@ -46,4 +46,11 @@ dependencies {
     // Room
     implementation(libs.androidx.room3.runtime)
     ksp(libs.androidx.room3.compiler)
+
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+
 }
