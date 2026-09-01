@@ -1,0 +1,23 @@
+# Android Studio / IntelliJ
+*.iml
+.idea/
+
+# Gradle
+.gradle/
+
+# Local machine configuration
+local.properties
+
+# Build output
+build/
+**/build/
+
+# Native build
+.cxx/
+.externalNativeBuild/
+
+# Captures
+captures/
+
+# macOS
+.DS_Store
