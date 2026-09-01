@@ -1,4 +1,4 @@
-package com.example.app_event_tracker.domain
+package com.example.app_event_tracker.domain.models
 
 public enum class AppEventType(public val repetition: AppEventTriggerRepetitionType) {
     INSTALL(AppEventTriggerRepetitionType.STRICTLY_ONCE),
