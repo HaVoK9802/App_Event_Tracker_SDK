@@ -25,7 +25,7 @@ public class AppEventTracker private constructor(
     private var getUnprocessedEvents: GetUnprocessedEvents? = null
 ){
 
-    private var sessionManager: SessionManager? = null
+    internal var sessionManager: SessionManager? = null
     private var coroutineScope: CoroutineScope? = null
 
     private var appEventsRepo: AppEventsRepo? = null

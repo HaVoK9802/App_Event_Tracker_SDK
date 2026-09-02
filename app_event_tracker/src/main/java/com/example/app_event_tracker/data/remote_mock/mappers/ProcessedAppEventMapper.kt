@@ -6,7 +6,18 @@ import com.example.app_event_tracker.domain.models.AppEventType
 
 internal fun ProcessedAppEvent.toAppEvent(): AppEvent {
     return AppEvent(
-        appEventType = AppEventType.valueOf(appEventType),
+        id = id,
+        appEventType = AppEventType.fromString(appEventType),
+        sessionId = sessionId,
+        data = data,
+        timestamp = timestamp
+    )
+}
+
+internal fun AppEvent.toProcessedAppEvent(): ProcessedAppEvent {
+    return ProcessedAppEvent(
+        id = id,
+        appEventType = appEventType.name,
         sessionId = sessionId,
         data = data,
         timestamp = timestamp

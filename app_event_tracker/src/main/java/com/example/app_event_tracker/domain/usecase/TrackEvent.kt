@@ -1,7 +1,7 @@
 package com.example.app_event_tracker.domain.usecase
 
 import com.example.app_event_tracker.JsonHelper
-import com.example.app_event_tracker.data.repository.AppEventsRepoImpl
+import com.example.app_event_tracker.data.MissingAppEventType
 import com.example.app_event_tracker.domain.models.AppEvent
 import com.example.app_event_tracker.domain.models.AppEventType
 import com.example.app_event_tracker.domain.repository.AppEventsRepo
@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.jsonPrimitive
+import java.util.UUID
 
 internal class TrackEvent(
     val appEventsRepo: AppEventsRepo
@@ -23,6 +24,7 @@ internal class TrackEvent(
         val appEventType = getAppEventTypeFromJson(json)
         appEventsRepo.trackEvent(
             appEvent = AppEvent(
+                id = UUID.randomUUID().toString(),
                 appEventType = appEventType.await(),
                 sessionId = sessionId,
                 data = json,
@@ -34,12 +36,15 @@ internal class TrackEvent(
     private suspend fun getAppEventTypeFromJson(json: String): Deferred<AppEventType> =
         withContext(Dispatchers.Default) {
             async {
-                when (JsonHelper.getJsonObject(json)["event_type"]!!.jsonPrimitive.content) {
-                    "add_to_cart" -> AppEventType.ADD_TO_CART
-                    "install" -> AppEventType.INSTALL
-                    "visit" -> AppEventType.VISIT
-                    "purchase" -> AppEventType.PURCHASE
-                    else -> AppEventType.UNKNOWN
+                val eventType = JsonHelper.getJsonObject(json)["event_type"] ?: run {
+                    throw MissingAppEventType()
+                }
+                when (eventType.jsonPrimitive.content) {
+                    "add_to_cart" -> AppEventType.MultipleEvent.AddToCart
+                    "install" -> AppEventType.StrictlyOnceEvent.Install
+                    "visit" -> AppEventType.OncePerSessionEvent.Visit
+                    "purchase" -> AppEventType.MultipleEvent.Purchase
+                    else -> AppEventType.Unknown
                 }
             }
         }

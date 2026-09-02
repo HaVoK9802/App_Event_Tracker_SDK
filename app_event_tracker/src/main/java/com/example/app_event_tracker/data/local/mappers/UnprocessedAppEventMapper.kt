@@ -8,11 +8,23 @@ import com.example.app_event_tracker.domain.models.AppEventWithStatus
 internal fun UnprocessedAppEvent.toAppEventWithStatus(): AppEventWithStatus {
     return AppEventWithStatus(
         appEvent = AppEvent(
-            appEventType = AppEventType.valueOf(appEventType),
+            id = id,
+            appEventType = AppEventType.fromString(appEventType),
             sessionId = sessionId,
             data = data,
             timestamp = timestamp
         ),
         uploadStatus = status
+    )
+}
+
+internal fun AppEventWithStatus.toUnprocessedAppEvent(): UnprocessedAppEvent {
+    return UnprocessedAppEvent(
+        id = appEvent.id,
+        appEventType = appEvent.appEventType.name,
+        sessionId = appEvent.sessionId,
+        data = appEvent.data,
+        timestamp = appEvent.timestamp,
+        status = uploadStatus
     )
 }

@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 internal interface ProcessedAppEventsDao {
 
     @Query("SELECT * FROM remote_mock_app_events ORDER BY timestamp ASC")
-    suspend fun getAllProcessedEvents(): Flow<List<ProcessedAppEvent>>
+    fun getAllProcessedEvents(): Flow<List<ProcessedAppEvent>>
 
+    @Query("SELECT * FROM remote_mock_app_events WHERE id = :id LIMIT 1")
+    suspend fun getEventById(id: String): ProcessedAppEvent?
 }

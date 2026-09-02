@@ -1,12 +1,12 @@
 package com.example.app_event_tracker.data.local.mappers
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import com.example.app_event_tracker.domain.models.UploadStatus
 
 internal class UploadStatusConverter {
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromState(state: UploadStatus): String = state.name
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toState(value: String): UploadStatus = UploadStatus.valueOf(value)
 }

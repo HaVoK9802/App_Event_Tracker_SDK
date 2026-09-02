@@ -5,11 +5,10 @@ import androidx.room3.PrimaryKey
 
 @Entity(tableName = "remote_mock_app_events")
 internal data class ProcessedAppEvent(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey val id: String,
     val appEventType: String,
     val sessionId: String,
-    val data: String?,
+    val data: String,
     val timestamp: Long
 )
 
