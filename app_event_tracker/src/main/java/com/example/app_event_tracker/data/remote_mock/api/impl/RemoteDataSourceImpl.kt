@@ -1,6 +1,6 @@
 package com.example.app_event_tracker.data.remote_mock.api.impl
 
-import com.example.app_event_tracker.AppEventTracker
+import android.content.Context
 import com.example.app_event_tracker.data.local.entity.UnprocessedAppEvent
 import com.example.app_event_tracker.data.remote_mock.AppEventsDatabase
 import com.example.app_event_tracker.data.remote_mock.AppEventsDatabaseClient
@@ -12,11 +12,11 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class RemoteDataSourceImpl(
-    val serverMock: AppEventsDatabase = AppEventsDatabaseClient.getDatabase(
-        AppEventTracker.getInstance().applicationContext
-    )
+    context: Context
 ): RemoteDataSource {
 
+
+    val serverMock: AppEventsDatabase = AppEventsDatabaseClient.getDatabase(context.applicationContext)
 
     override suspend fun uploadEvent(unprocessedEvent: UnprocessedAppEvent): Boolean {
         return if (eventProcessingSimulation()){

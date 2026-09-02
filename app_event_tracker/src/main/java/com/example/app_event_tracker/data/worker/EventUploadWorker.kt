@@ -24,9 +24,7 @@ public class EventUploadWorker(
         LocalAppEventsDatabaseClient.getDatabase(applicationContext)
 
     private val remoteDataSource: RemoteDataSource =
-        RemoteDataSourceImpl(
-            AppEventsDatabaseClient.getDatabase(applicationContext)
-        )
+        RemoteDataSourceImpl(applicationContext)
 
     override suspend fun doWork(): Result {
         val eventId = inputData.getString(EVENT_ID_KEY)

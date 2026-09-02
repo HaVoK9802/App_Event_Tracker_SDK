@@ -1,5 +1,6 @@
 package com.example.app_event_tracker.data.repository
 
+import android.content.Context
 import android.util.Log
 import com.example.app_event_tracker.AppEventTracker
 import com.example.app_event_tracker.JsonHelper
@@ -24,11 +25,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.jsonPrimitive
 
 internal class AppEventsRepoImpl(
-    private val localDataSource: LocalAppEventsDatabase = LocalAppEventsDatabaseClient.getDatabase(
-        AppEventTracker.getInstance().applicationContext
-    ),
-    private val remoteDataSource: RemoteDataSource = RemoteDataSourceImpl()
+    context: Context
 ) : AppEventsRepo {
+
+    private val localDataSource: LocalAppEventsDatabase = LocalAppEventsDatabaseClient.getDatabase(context.applicationContext)
+    private val remoteDataSource: RemoteDataSource = RemoteDataSourceImpl(context)
 
     override suspend fun trackEvent(appEvent: AppEvent) {
         try {
@@ -96,15 +97,10 @@ internal class AppEventsRepoImpl(
                     is AppEventType.MultipleEvent -> {
                         when (appEvent.appEventType) {
                             is AppEventType.MultipleEvent.AddToCart, AppEventType.MultipleEvent.Purchase -> {
-                                val itemId =
-                                    JsonHelper.getJsonObject(appEvent.data)["item_id"]?.jsonPrimitive?.content
-                                        ?: run {
-                                            throw MissingData("item_id", appEvent.appEventType)
-                                        }
                                 val processedEvent =
-                                    localDataSource.localAppEventTrackerDao().getEventById(itemId)
+                                    localDataSource.localAppEventTrackerDao().getEventById(appEvent.id)
                                 val unprocessedEvent =
-                                    remoteDataSource.getProcessedAppEventsDataInterface().getEventById(itemId)
+                                    remoteDataSource.getProcessedAppEventsDataInterface().getEventById(appEvent.id)
                                 if (processedEvent == null && unprocessedEvent == null) {
                                    canQueueEvent = true
                                 } else {

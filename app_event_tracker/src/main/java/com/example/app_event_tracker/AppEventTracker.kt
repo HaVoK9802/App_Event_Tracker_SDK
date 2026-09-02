@@ -43,7 +43,7 @@ public class AppEventTracker private constructor(
                     it.sessionManager = SessionManager()
                     it.sessionManager?.startSession()
                     it.coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineName("AppEventTrackerScope"))
-                    it.appEventsRepo = AppEventsRepoImpl()
+                    it.appEventsRepo = AppEventsRepoImpl(it.applicationContext)
                     it.eventUploadScheduler = EventUploadScheduler(it.applicationContext)
                     it.trackEvent = TrackEvent(it.appEventsRepo!!)
                     it.getProcessedEvents = GetProcessedEvents(it.appEventsRepo!!)
