@@ -3,12 +3,12 @@ package com.example.app_event_tracker.domain.models
 
 public data class AppEventUploadStatus(
     val uploadStatus: UploadStatus,
-    val attempt: Int = 0,
-    val retryingInterval: Long = 0L
+    val retryAttempt: Int = 0,
+    val retryAt: Long = 0L
 )
 public enum class UploadStatus {
-    PROCESSED,
+    QUEUED,
     PROCESSING,
-    FAILED,
-    RETRYING
+    RETRYING,
+    FAILED
 }

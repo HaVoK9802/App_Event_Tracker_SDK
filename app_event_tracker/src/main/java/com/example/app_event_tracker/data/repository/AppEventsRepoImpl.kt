@@ -8,12 +8,15 @@ import com.example.app_event_tracker.data.UnknownAppEvent
 import com.example.app_event_tracker.data.local.LocalAppEventsDatabase
 import com.example.app_event_tracker.data.local.LocalAppEventsDatabaseClient
 import com.example.app_event_tracker.data.local.mappers.toAppEventWithStatus
-import com.example.app_event_tracker.data.remote_mock.AppEventsDatabase
-import com.example.app_event_tracker.data.remote_mock.AppEventsDatabaseClient
+import com.example.app_event_tracker.data.local.mappers.toUnprocessedAppEvent
+import com.example.app_event_tracker.data.remote_mock.api.RemoteDataSource
+import com.example.app_event_tracker.data.remote_mock.api.impl.RemoteDataSourceImpl
 import com.example.app_event_tracker.data.remote_mock.mappers.toAppEvent
 import com.example.app_event_tracker.domain.models.AppEvent
 import com.example.app_event_tracker.domain.models.AppEventType
+import com.example.app_event_tracker.domain.models.AppEventUploadStatus
 import com.example.app_event_tracker.domain.models.AppEventWithStatus
+import com.example.app_event_tracker.domain.models.UploadStatus
 import com.example.app_event_tracker.domain.repository.AppEventsRepo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -24,13 +27,12 @@ internal class AppEventsRepoImpl(
     private val localDataSource: LocalAppEventsDatabase = LocalAppEventsDatabaseClient.getDatabase(
         AppEventTracker.getInstance().applicationContext
     ),
-    private val remoteDataSource: AppEventsDatabase = AppEventsDatabaseClient.getDatabase(
-        AppEventTracker.getInstance().applicationContext
-    )
+    private val remoteDataSource: RemoteDataSource = RemoteDataSourceImpl()
 ) : AppEventsRepo {
 
     override suspend fun trackEvent(appEvent: AppEvent) {
         try {
+            var canQueueEvent = false
             require(appEvent.appEventType !is AppEventType.Unknown) {
                 when (appEvent.appEventType) {
                     is AppEventType.StrictlyOnceEvent -> {
@@ -39,7 +41,7 @@ internal class AppEventsRepoImpl(
                             localDataSource.localAppEventTrackerDao().getUnprocessedEvents()
                                 .first().map { it.toAppEventWithStatus().appEvent }
                         val processedEvents =
-                            remoteDataSource.appEventsDao().getAllProcessedEvents().first()
+                            remoteDataSource.getProcessedAppEventsDataInterface().getAllProcessedEvents().first()
                                 .map { it.toAppEvent() }
                         val allEvents = unprocessedEvents + processedEvents
 
@@ -49,14 +51,12 @@ internal class AppEventsRepoImpl(
                                     JsonHelper.getJsonObject(appEvent.data)["event_type"]!!.jsonPrimitive.content == appEvent.appEventType.name
                                 }
                                 if(installEvent==null){
-
+                                    canQueueEvent = true
                                 } else {
                                     Log.w("AppEvent", "Duplicate app install event, should be strictly once")
                                 }
                             }
                         }
-
-
                     }
 
                     is AppEventType.OncePerSessionEvent -> {
@@ -65,7 +65,7 @@ internal class AppEventsRepoImpl(
                             localDataSource.localAppEventTrackerDao().getUnprocessedEvents()
                                 .first().map { it.toAppEventWithStatus().appEvent }
                         val processedEvents =
-                            remoteDataSource.appEventsDao().getAllProcessedEvents().first()
+                            remoteDataSource.getProcessedAppEventsDataInterface().getAllProcessedEvents().first()
                                 .map { it.toAppEvent() }
                         val allEvents = unprocessedEvents + processedEvents
                         when (appEvent.appEventType) {
@@ -87,8 +87,7 @@ internal class AppEventsRepoImpl(
                             }
                         }
                         if (!isDuplicateEvent) {
-
-
+                            canQueueEvent = true
                         } else {
                             Log.w("AppEvent", "Duplicate app event, should be once per session")
                         }
@@ -105,9 +104,9 @@ internal class AppEventsRepoImpl(
                                 val processedEvent =
                                     localDataSource.localAppEventTrackerDao().getEventById(itemId)
                                 val unprocessedEvent =
-                                    remoteDataSource.appEventsDao().getEventById(itemId)
+                                    remoteDataSource.getProcessedAppEventsDataInterface().getEventById(itemId)
                                 if (processedEvent == null && unprocessedEvent == null) {
-
+                                   canQueueEvent = true
                                 } else {
                                     Log.w("AppEvent", "Duplicate app event, has same event id")
                                 }
@@ -118,6 +117,17 @@ internal class AppEventsRepoImpl(
                     is AppEventType.Unknown -> return
                 }
             }
+            if(canQueueEvent) {
+                localDataSource.localAppEventTrackerDao().queueEvent(
+                    AppEventWithStatus(
+                        appEvent = appEvent,
+                        uploadStatus = AppEventUploadStatus(
+                            UploadStatus.QUEUED
+                        )
+                    ).toUnprocessedAppEvent()
+                )
+                AppEventTracker.getInstance().eventUploadScheduler!!.schedule(appEvent.id)
+            }
         } catch (_: IllegalArgumentException) {
             throw UnknownAppEvent()
         }
@@ -125,7 +135,7 @@ internal class AppEventsRepoImpl(
     }
 
     override suspend fun getProcessedEventList(): Flow<List<AppEvent>> {
-        return remoteDataSource.appEventsDao().getAllProcessedEvents().map {
+        return  remoteDataSource.getProcessedAppEventsDataInterface().getAllProcessedEvents().map {
             it.map { entity ->
                 entity.toAppEvent()
             }

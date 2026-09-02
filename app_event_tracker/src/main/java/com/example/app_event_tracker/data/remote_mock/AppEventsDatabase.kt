@@ -2,7 +2,7 @@ package com.example.app_event_tracker.data.remote_mock
 
 import androidx.room3.Database
 import androidx.room3.RoomDatabase
-import com.example.app_event_tracker.data.remote_mock.dao.ProcessedAppEventsDao
+import com.example.app_event_tracker.data.remote_mock.api.ProcessedAppEventsDao
 import com.example.app_event_tracker.data.remote_mock.dto.ProcessedAppEvent
 
 

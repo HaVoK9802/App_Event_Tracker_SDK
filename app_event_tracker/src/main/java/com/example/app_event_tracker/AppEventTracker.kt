@@ -3,6 +3,7 @@ package com.example.app_event_tracker
 import android.content.Context
 import com.example.app_event_tracker.data.SessionManager
 import com.example.app_event_tracker.data.repository.AppEventsRepoImpl
+import com.example.app_event_tracker.data.worker.EventUploadScheduler
 import com.example.app_event_tracker.domain.models.AppEvent
 import com.example.app_event_tracker.domain.models.AppEventWithStatus
 import com.example.app_event_tracker.domain.repository.AppEventsRepo
@@ -30,6 +31,8 @@ public class AppEventTracker private constructor(
 
     private var appEventsRepo: AppEventsRepo? = null
 
+    internal var eventUploadScheduler: EventUploadScheduler? = null
+
     public companion object{
         @Volatile
         private var instance: AppEventTracker? = null
@@ -41,6 +44,7 @@ public class AppEventTracker private constructor(
                     it.sessionManager?.startSession()
                     it.coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineName("AppEventTrackerScope"))
                     it.appEventsRepo = AppEventsRepoImpl()
+                    it.eventUploadScheduler = EventUploadScheduler(it.applicationContext)
                     it.trackEvent = TrackEvent(it.appEventsRepo!!)
                     it.getProcessedEvents = GetProcessedEvents(it.appEventsRepo!!)
                     it.getUnprocessedEvents = GetUnprocessedEvents(it.appEventsRepo!!)

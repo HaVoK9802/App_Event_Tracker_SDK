@@ -17,10 +17,10 @@ internal interface LocalAppEventTrackerDao {
     @Update
     suspend fun updateEvent(unprocessedAppEvent: UnprocessedAppEvent)
 
-    @Query("SELECT * FROM unprocessed_app_events WHERE current_uploadStatus = 'FAILED' ORDER BY timestamp ASC")
-    suspend fun getFailedEvents(): List<UnprocessedAppEvent>
+    @Query("SELECT * FROM unprocessed_app_events WHERE current_uploadStatus IN ('QUEUED', 'FAILED') ORDER BY timestamp ASC")
+    suspend fun getPendingEvents(): List<UnprocessedAppEvent>
 
-    @Query("SELECT * FROM unprocessed_app_events WHERE current_uploadStatus != 'PROCESSED' ORDER BY timestamp ASC")
+    @Query("SELECT * FROM unprocessed_app_events WHERE current_uploadStatus IN ('QUEUED', 'PROCESSING', 'FAILED', 'RETRYING') ORDER BY timestamp ASC")
     fun getUnprocessedEvents(): Flow<List<UnprocessedAppEvent>>
 
     @Query("SELECT * FROM unprocessed_app_events WHERE id = :id LIMIT 1")
