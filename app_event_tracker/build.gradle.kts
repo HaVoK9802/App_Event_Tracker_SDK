@@ -1,14 +1,13 @@
 plugins {
     alias(libs.plugins.android.library)
     id("com.google.devtools.ksp")
+    id("maven-publish")
 }
 
 android {
     namespace = "com.example.app_event_tracker_sdk"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -24,12 +23,32 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlin{
         explicitApi()
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "com.github.HaVoK9802.App_Event_Tracker_SDK"
+            artifactId = "app_event_tracker"
+            version = "1.0.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
     }
 }
 
