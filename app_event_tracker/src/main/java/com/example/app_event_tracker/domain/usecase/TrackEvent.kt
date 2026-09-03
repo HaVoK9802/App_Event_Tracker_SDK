@@ -40,10 +40,11 @@ internal class TrackEvent(
                     throw MissingAppEventType()
                 }
                 when (eventType.jsonPrimitive.content) {
-                    "add_to_cart" -> AppEventType.MultipleEvent.AddToCart
-                    "install" -> AppEventType.StrictlyOnceEvent.Install
-                    "visit" -> AppEventType.OncePerSessionEvent.Visit
-                    "purchase" -> AppEventType.MultipleEvent.Purchase
+                    AppEventType.ADD_TO_CART -> AppEventType.MultipleEvent.AddToCart
+                    AppEventType.INSTALL -> AppEventType.StrictlyOnceEvent.Install
+                    AppEventType.SCREEN_VISIT -> AppEventType.OncePerSessionEvent.ScreenVisit
+                    AppEventType.VISIT -> AppEventType.OncePerSessionEvent.Visit
+                    AppEventType.PURCHASE -> AppEventType.MultipleEvent.Purchase
                     else -> AppEventType.Unknown
                 }
             }

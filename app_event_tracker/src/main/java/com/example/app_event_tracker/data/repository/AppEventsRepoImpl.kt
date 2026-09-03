@@ -77,13 +77,25 @@ internal class AppEventsRepoImpl(
                         is AppEventType.OncePerSessionEvent.Visit -> {
                             val sessionId =
                                 AppEventTracker.getInstance().sessionManager?.getSessionId()
+                            allEvents.filter {
+                                it.appEventType is AppEventType.OncePerSessionEvent.Visit
+                            }.forEach {
+                                if (it.sessionId == sessionId) {
+                                    isDuplicateEvent = true
+                                }
+                            }
+                        }
+
+                        is AppEventType.OncePerSessionEvent.ScreenVisit -> {
+                            val sessionId =
+                                AppEventTracker.getInstance().sessionManager?.getSessionId()
                             val screenName =
                                 JsonHelper.getJsonObject(appEvent.data)["screen_name"]?.jsonPrimitive?.content
                                     ?: run {
                                         throw MissingData("screen_name", appEvent.appEventType)
                                     }
                             allEvents.filter {
-                                it.appEventType is AppEventType.OncePerSessionEvent.Visit
+                                it.appEventType is AppEventType.OncePerSessionEvent.ScreenVisit
                             }.forEach {
                                 val visitedScreenName =
                                     JsonHelper.getJsonObject(it.data)["screen_name"]!!.jsonPrimitive.content

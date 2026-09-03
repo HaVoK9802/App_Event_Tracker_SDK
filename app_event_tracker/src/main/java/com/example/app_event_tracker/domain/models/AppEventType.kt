@@ -4,19 +4,30 @@ public sealed class AppEventType {
 
     public val name: String
         get() = when (this) {
-            is StrictlyOnceEvent.Install -> "Install"
-            is OncePerSessionEvent.Visit -> "Visit"
-            is MultipleEvent.Purchase -> "Purchase"
-            is MultipleEvent.AddToCart -> "AddToCart"
-            is Unknown -> "Unknown"
+            is StrictlyOnceEvent.Install -> INSTALL
+            is OncePerSessionEvent.Visit -> VISIT
+            is OncePerSessionEvent.ScreenVisit -> SCREEN_VISIT
+            is MultipleEvent.Purchase -> PURCHASE
+            is MultipleEvent.AddToCart -> ADD_TO_CART
+            is Unknown -> UNKNOWN
         }
     public companion object{
+
+        public const val INSTALL: String = "INSTALL"
+        public const val VISIT: String = "VISIT"
+        public const val SCREEN_VISIT: String = "SCREEN_VISIT"
+        public const val PURCHASE: String = "PURCHASE"
+        public const val ADD_TO_CART: String = "ADD_TO_CART"
+
+        public const val UNKNOWN: String = "UNKNOWN"
+
         public fun fromString(name: String): AppEventType {
             return when (name) {
-                "Install" -> StrictlyOnceEvent.Install
-                "Visit" -> OncePerSessionEvent.Visit
-                "Purchase" -> MultipleEvent.Purchase
-                "AddToCart" -> MultipleEvent.AddToCart
+                INSTALL -> StrictlyOnceEvent.Install
+                VISIT -> OncePerSessionEvent.Visit
+                SCREEN_VISIT -> OncePerSessionEvent.ScreenVisit
+                PURCHASE -> MultipleEvent.Purchase
+                ADD_TO_CART -> MultipleEvent.AddToCart
                 else -> Unknown
             }
         }
@@ -29,6 +40,9 @@ public sealed class AppEventType {
 
     public sealed class OncePerSessionEvent : AppEventType() {
         public data object Visit : OncePerSessionEvent()
+
+        public data object ScreenVisit: OncePerSessionEvent()
+
     }
 
     public sealed class MultipleEvent : AppEventType() {

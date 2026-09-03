@@ -43,7 +43,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.github.HaVoK9802.App_Event_Tracker_SDK"
             artifactId = "app_event_tracker"
-            version = System.getenv("VERSION") ?: "1.0.2"
+            version = System.getenv("VERSION") ?: "1.1.0"
 
             afterEvaluate {
                 from(components["release"])
