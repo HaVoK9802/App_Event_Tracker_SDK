@@ -34,83 +34,78 @@ internal class AppEventsRepoImpl(
     override suspend fun trackEvent(appEvent: AppEvent) {
         try {
             var canQueueEvent = false
-            require(appEvent.appEventType !is AppEventType.Unknown) {
-                when (appEvent.appEventType) {
-                    is AppEventType.StrictlyOnceEvent -> {
 
-                        val unprocessedEvents =
-                            localDataSource.localAppEventTrackerDao().getUnprocessedEvents()
-                                .first().map { it.toAppEventWithStatus().appEvent }
-                        val processedEvents =
-                            remoteDataSource.getProcessedAppEventsDataInterface().getAllProcessedEvents().first()
-                                .map { it.toAppEvent() }
-                        val allEvents = unprocessedEvents + processedEvents
+            when (appEvent.appEventType) {
+                is AppEventType.StrictlyOnceEvent -> {
+                    val unprocessedEvents =
+                        localDataSource.localAppEventTrackerDao().getUnprocessedEvents()
+                            .first().map { it.toAppEventWithStatus().appEvent }
+                    val processedEvents =
+                        remoteDataSource.getProcessedAppEventsDataInterface()
+                            .getAllProcessedEvents().first()
+                            .map { it.toAppEvent() }
+                    val allEvents = unprocessedEvents + processedEvents
 
-                        when(appEvent.appEventType){
-                            is AppEventType.StrictlyOnceEvent.Install -> {
-                                val installEvent = allEvents.find {
-                                    JsonHelper.getJsonObject(appEvent.data)["event_type"]!!.jsonPrimitive.content == appEvent.appEventType.name
-                                }
-                                if(installEvent==null){
-                                    canQueueEvent = true
-                                } else {
-                                    Log.w("AppEvent", "Duplicate app install event, should be strictly once")
-                                }
+                    when (appEvent.appEventType) {
+                        is AppEventType.StrictlyOnceEvent.Install -> {
+                            val installEvent = allEvents.find {
+                                it.appEventType is AppEventType.StrictlyOnceEvent.Install
+                            }
+                            if (installEvent == null) {
+                                canQueueEvent = true
+                            } else {
+                                Log.w(
+                                    "AppEvent",
+                                    "Duplicate app install event, should be strictly once"
+                                )
                             }
                         }
                     }
+                }
 
-                    is AppEventType.OncePerSessionEvent -> {
-                        var isDuplicateEvent = false
-                        val unprocessedEvents =
-                            localDataSource.localAppEventTrackerDao().getUnprocessedEvents()
-                                .first().map { it.toAppEventWithStatus().appEvent }
-                        val processedEvents =
-                            remoteDataSource.getProcessedAppEventsDataInterface().getAllProcessedEvents().first()
-                                .map { it.toAppEvent() }
-                        val allEvents = unprocessedEvents + processedEvents
-                        when (appEvent.appEventType) {
-                            is AppEventType.OncePerSessionEvent.Visit -> {
-                                val sessionId =
-                                    AppEventTracker.getInstance().sessionManager?.getSessionId()
-                                val screenName =
-                                    JsonHelper.getJsonObject(appEvent.data)["screen_name"]?.jsonPrimitive?.content
-                                        ?: run {
-                                            throw MissingData("screen_name", appEvent.appEventType)
-                                        }
-                                allEvents.forEach {
-                                    val visitedScreenName =
-                                        JsonHelper.getJsonObject(it.data)["screen_name"]!!.jsonPrimitive.content
-                                    if (it.sessionId == sessionId && screenName == visitedScreenName) {
-                                        isDuplicateEvent = true
+                is AppEventType.OncePerSessionEvent -> {
+                    var isDuplicateEvent = false
+                    val unprocessedEvents =
+                        localDataSource.localAppEventTrackerDao().getUnprocessedEvents()
+                            .first().map { it.toAppEventWithStatus().appEvent }
+                    val processedEvents =
+                        remoteDataSource.getProcessedAppEventsDataInterface()
+                            .getAllProcessedEvents().first()
+                            .map { it.toAppEvent() }
+                    val allEvents = unprocessedEvents + processedEvents
+                    when (appEvent.appEventType) {
+                        is AppEventType.OncePerSessionEvent.Visit -> {
+                            val sessionId =
+                                AppEventTracker.getInstance().sessionManager?.getSessionId()
+                            val screenName =
+                                JsonHelper.getJsonObject(appEvent.data)["screen_name"]?.jsonPrimitive?.content
+                                    ?: run {
+                                        throw MissingData("screen_name", appEvent.appEventType)
                                     }
-                                }
-                            }
-                        }
-                        if (!isDuplicateEvent) {
-                            canQueueEvent = true
-                        } else {
-                            Log.w("AppEvent", "Duplicate app event, should be once per session")
-                        }
-                    }
-
-                    is AppEventType.MultipleEvent -> {
-                        when (appEvent.appEventType) {
-                            is AppEventType.MultipleEvent.AddToCart, AppEventType.MultipleEvent.Purchase -> {
-                                val processedEvent =
-                                    localDataSource.localAppEventTrackerDao().getEventById(appEvent.id)
-                                val unprocessedEvent =
-                                    remoteDataSource.getProcessedAppEventsDataInterface().getEventById(appEvent.id)
-                                if (processedEvent == null && unprocessedEvent == null) {
-                                   canQueueEvent = true
-                                } else {
-                                    Log.w("AppEvent", "Duplicate app event, has same event id")
+                            allEvents.filter {
+                                it.appEventType is AppEventType.OncePerSessionEvent.Visit
+                            }.forEach {
+                                val visitedScreenName =
+                                    JsonHelper.getJsonObject(it.data)["screen_name"]!!.jsonPrimitive.content
+                                if (it.sessionId == sessionId && screenName == visitedScreenName) {
+                                    isDuplicateEvent = true
                                 }
                             }
                         }
                     }
+                    if (!isDuplicateEvent) {
+                        canQueueEvent = true
+                    } else {
+                        Log.w("AppEvent", "Duplicate app event, should be once per session")
+                    }
+                }
 
-                    is AppEventType.Unknown -> return
+                is AppEventType.MultipleEvent -> {
+                    canQueueEvent = true
+                }
+
+                is AppEventType.Unknown -> {
+                    return
                 }
             }
             if(canQueueEvent) {
